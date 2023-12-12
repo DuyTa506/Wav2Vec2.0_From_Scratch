@@ -1,0 +1,15 @@
+huggingface_hub 
+pandarallel
+pandas
+scikit_learn==1.0.2
+tensorflow==2.8.1
+toml
+tqdm
+datasets
+torch
+torchaudio
+accelerate
+librosa
+transformers
+soundfile
+numpy
