@@ -10,7 +10,7 @@ pip install -r requirements.txt
 ```
 </br>
 <a name = "Pretraining" ></a>
-### Pretraining
+### Finetune
 Suppose you want to reproduct Wav2vec2.0 model from scratch , firstly, prepare the datasets for pretraining
 Change the work dir to [Wav2vec2-Pretraining](Wav2vec2-Pretraining) and check [README](Wav2vec2-Pretraining/README.md) for further detail :D
 </br>
