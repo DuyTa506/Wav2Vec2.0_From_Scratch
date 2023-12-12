@@ -6,9 +6,6 @@
 4. [Train](#train)
 5. [Inference](#inference)
 6. [Logs and Visualization](#logs)
-7. [Citation](#citation)
-8. [Vietnamese](#vietnamese)
-
 
 <a name = "documentation" ></a>
 ### Documentation
