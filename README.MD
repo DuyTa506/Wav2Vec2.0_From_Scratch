@@ -5,9 +5,9 @@
 
 <a name = "Important note" ></a>
 You only need install the requirements at the base work dir, and don't need to install requirements on each child work dir
-```
-bash pip install -r requirements.txt
-```
+    ```bash
+    python track.py
+    ```
 </br>
 
 <a name = "Pretraining" ></a>
