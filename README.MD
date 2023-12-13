@@ -12,12 +12,12 @@ pip install -r requirements.txt
 
 <a name = "Pretraining" ></a>
 ### Pretraining
-Suppose you want to reproduct Wav2vec2.0 model from scratch , firstly, prepare the datasets for pretraining
-Change the work dir to [Wav2vec2-Pretraining](Wav2vec2-Pretraining) and check [README](Wav2vec2-Pretraining/README.md) for further detail :D
+- Suppose you want to reproduct Wav2vec2.0 model from scratch , firstly, prepare the datasets for pretraining.
+- Change the work dir to [Wav2vec2-Pretraining](Wav2vec2-Pretraining) and check [README](Wav2vec2-Pretraining/README.md) for further detail :D
 </br>
 
 <a name = "Finetune" ></a>
 ### Finetune
-Certainly, you can pass phase 1 if you had strong enough pretrained model, check [this](https://huggingface.co/TencentGameMate) out
-Yah, and after that, change the work dir to [Wav2vec2-Finetune](Wav2vec2-Finetune) and check [README](Wav2vec2-Finetune/README.md) for further detail !!
+- Certainly, you can pass phase 1 if you had strong enough pretrained model, check [this](https://huggingface.co/TencentGameMate) out .
+- Yah, and after that, change the work dir to [Wav2vec2-Finetune](Wav2vec2-Finetune) and check [README](Wav2vec2-Finetune/README.md) for further detail !!
 </br>
