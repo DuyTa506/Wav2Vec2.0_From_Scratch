@@ -18,8 +18,9 @@ from dataloader.dataset import DefaultCollate
 from transformers import Wav2Vec2ForCTC, Wav2Vec2FeatureExtractor, Wav2Vec2CTCTokenizer, Wav2Vec2Processor
 
 def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_ADDR'] = '127.0.0.1'
     os.environ['MASTER_PORT'] = '4444'
+    os.environ['GLOO_SOCKET_IFNAME']= 'enp1s0'
 
     # initialize the process group
     dist.init_process_group("gloo", rank=rank, world_size=world_size, timeout=datetime.timedelta(seconds=3600 * 5))
@@ -78,7 +79,7 @@ def main(rank, world_size, config, resume, preload):
     tokenizer = Wav2Vec2CTCTokenizer("vocab.json", 
                                     **config["special_tokens"],
                                     word_delimiter_token="|")
-    feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(pretrained_path)
+    feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(config['meta']['pretrained_path'])
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     default_collate = DefaultCollate(processor, config['meta']['sr'])
 
@@ -116,11 +117,11 @@ def main(rank, world_size, config, resume, preload):
 
     # Load pretrained model
     model = Wav2Vec2ForCTC.from_pretrained(
-        pretrained_path, 
+        config['meta']['pretrained_path'], 
         ctc_loss_reduction="mean", 
         pad_token_id=processor.tokenizer.pad_token_id,
         vocab_size=len(processor.tokenizer),
-        gradient_checkpointing=False
+        # gradient_checkpointing=False
     )
     
     # freeze the wav2vec feature encoder, if you have small dataset, this helps a lot

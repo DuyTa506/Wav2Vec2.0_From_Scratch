@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import sys
 import re
@@ -78,8 +79,46 @@ class BaseDataset(Dataset):
             wavs += [wav]
         return wavs
 
-    def load_data(self, path, delimiter) -> pd.DataFrame:
-        df = pd.read_csv(path, delimiter = delimiter)
+    def load_data(self,input_folder, delimiter) -> pd.DataFrame:
+        all_paths = []
+        all_transcripts = []
+
+        if os.path.isdir(input_folder):
+            all_files = os.listdir(input_folder)
+
+            wav_files = [f for f in all_files if f.endswith(".wav")]
+
+            for wav_file in wav_files:
+                wav_path = os.path.join(input_folder, wav_file)
+                transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
+                if os.path.exists(transcript_path):
+                    with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
+                        transcript = transcript_file.read()
+
+                    all_paths.append(wav_path)
+                    all_transcripts.append(transcript)
+
+        subfolders = [f for f in os.listdir(input_folder) if os.path.isdir(os.path.join(input_folder, f))]
+
+        for subfolder in subfolders:
+            subfolder_path = os.path.join(input_folder, subfolder)
+
+            all_files = os.listdir(subfolder_path)
+
+            wav_files = [f for f in all_files if f.endswith(".wav")]
+
+            for wav_file in wav_files:
+                wav_path = os.path.join(subfolder_path, wav_file)
+                transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
+                if os.path.exists(transcript_path):
+                    with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
+                        transcript = transcript_file.read()
+
+                    all_paths.append(wav_path)
+                    all_transcripts.append(transcript)
+
+        df = pd.DataFrame({'path': all_paths, 'transcript': all_transcripts})
+        print(df.head(5))
         return df
 
     def get_data(self) -> Dataset:
@@ -89,12 +128,17 @@ class BaseDataset(Dataset):
 
 if __name__ == '__main__':
     ds = BaseDataset(
-        path = '/content/drive/MyDrive/ASR Finetune/dataset/vivos/test.csv', 
+        path = '/home/pvanh/data/zh_stt/ASR-RAMC-BIGCCSC', 
         sr = 16000, 
-        preload_data = False, 
-        val_size = None, 
+        preload_data = False,
+        rank = 1,
+        dist=None,
+        delimiter="|",
+        special_tokens=None, 
+        # val_size = None, 
         transform = None)
-    
+    df= ds.load_data()
+    print(df.head)
     vocab_dict = ds.get_vocab_dict()
     for k, v in vocab_dict.items():
         print(f'{k} - {v}')
