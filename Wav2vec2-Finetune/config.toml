@@ -79,7 +79,7 @@ lr = 1e-5
 
 
 [scheduler]
-max_lr = 3e-4
+max_lr = 5e-5
     
 
 [trainer]
