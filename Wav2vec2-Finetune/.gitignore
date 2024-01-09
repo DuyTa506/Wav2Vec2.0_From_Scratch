@@ -8,3 +8,4 @@ models/
 *.gz
 *.tar
 *.out
+*/__pycache__
