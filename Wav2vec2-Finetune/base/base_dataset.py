@@ -38,9 +38,9 @@ class BaseDataset(Dataset):
             if self.rank == 0 and 'duration' not in self.df.columns:
                 print("\n*****Generate duration column*****")
                 self.df['duration'] = self.df['path'].parallel_apply(lambda filename: librosa.get_duration(filename=filename))
-                self.df.to_csv(path, index = False, sep = delimiter)
+                #self.df.to_csv(path, index = False, sep = delimiter)
             self.dist.barrier()
-            self.df = self.load_data(path, delimiter)
+            #self.df = self.load_data(path, delimiter)
             if self.rank == 0:
                 print("\n*****Filter out invalid audio*****")
             mask = (self.df['duration'] <= self.max_duration) & (self.df['duration'] >= self.min_duration)
