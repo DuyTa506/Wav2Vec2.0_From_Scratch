@@ -1,4 +1,5 @@
 import os
+import string
 import pandas as pd
 import sys
 import re
@@ -23,7 +24,8 @@ class BaseDataset(Dataset):
         self.dist = dist
         self.sr = sr
         # Special characters to remove in your data 
-        self.chars_to_ignore = r'[,?.!\-;:"“%\'�]'
+        self.chars_to_ignore = u"[！？。，＂＃＄％＆＇（）－／：；＜＝＞＠＼＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏"  + string.punctuation+']+'
+        self.label  = ["[+]", "[++]", "[*]", "[SONANT]", "[MUSIC]", "[LAUGHTER]", "[ENS]", "[SYSTEM]"]
         self.transform = transform
         self.preload_data = preload_data
         self.min_duration = min_duration
@@ -44,6 +46,8 @@ class BaseDataset(Dataset):
             mask = (self.df['duration'] <= self.max_duration) & (self.df['duration'] >= self.min_duration)
             self.df = self.df[mask]
         self.df['transcript'] = self.df['transcript'].parallel_apply(self.remove_special_characters)
+        self.df = self.df[self.df['transcript'] != ""]
+        self.df = self.df.reset_index(drop=True)
     
         if self.preload_data:
             if self.rank == 0:
@@ -51,7 +55,12 @@ class BaseDataset(Dataset):
             self.df['wav'] = self.df['path'].parallel_apply(lambda filepath: load_wav(filepath, sr = self.sr))
         
     def remove_special_characters(self, transcript) -> str:
-        transcript = re.sub(self.chars_to_ignore, '', transcript).lower()
+        transcript = ''.join(transcript.split())
+        rule = re.compile(self.chars_to_ignore)
+        label_pattern = '|'.join(map(re.escape, self.label))
+        rule_label = re.compile(f'(\[{label_pattern}\])')
+        transcript = re.sub(rule_label, "", transcript)
+        transcript = re.sub(rule, "", transcript).lower()
         return transcript
 
     def get_vocab_dict(self) -> Dict[int, str]:
@@ -68,7 +77,7 @@ class BaseDataset(Dataset):
         del vocab_dict[" "]
         for v in self.special_tokens.values():
             vocab_dict[v] = len(vocab_dict)
-        print(vocab_dict)
+        #print(vocab_dict)
         return vocab_dict
 
     def preload_dataset(self, paths, sr) -> List:
@@ -79,46 +88,47 @@ class BaseDataset(Dataset):
             wavs += [wav]
         return wavs
 
-    def load_data(self,input_folder, delimiter) -> pd.DataFrame:
+    def load_data(self,input_folders, delimiter) -> pd.DataFrame:
         all_paths = []
         all_transcripts = []
+        input_folders = input_folders.split(',')
+        for input_folder in input_folders :
+            if os.path.isdir(input_folder):
+                all_files = os.listdir(input_folder)
 
-        if os.path.isdir(input_folder):
-            all_files = os.listdir(input_folder)
+                wav_files = [f for f in all_files if f.endswith(".wav")]
 
-            wav_files = [f for f in all_files if f.endswith(".wav")]
+                for wav_file in wav_files:
+                    wav_path = os.path.join(input_folder, wav_file)
+                    transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
+                    if os.path.exists(transcript_path):
+                        with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
+                            transcript = transcript_file.read()
 
-            for wav_file in wav_files:
-                wav_path = os.path.join(input_folder, wav_file)
-                transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
-                if os.path.exists(transcript_path):
-                    with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
-                        transcript = transcript_file.read()
+                        all_paths.append(wav_path)
+                        all_transcripts.append(transcript)
 
-                    all_paths.append(wav_path)
-                    all_transcripts.append(transcript)
+            subfolders = [f for f in os.listdir(input_folder) if os.path.isdir(os.path.join(input_folder, f))]
 
-        subfolders = [f for f in os.listdir(input_folder) if os.path.isdir(os.path.join(input_folder, f))]
+            for subfolder in subfolders:
+                subfolder_path = os.path.join(input_folder, subfolder)
 
-        for subfolder in subfolders:
-            subfolder_path = os.path.join(input_folder, subfolder)
+                all_files = os.listdir(subfolder_path)
 
-            all_files = os.listdir(subfolder_path)
+                wav_files = [f for f in all_files if f.endswith(".wav")]
 
-            wav_files = [f for f in all_files if f.endswith(".wav")]
+                for wav_file in wav_files:
+                    wav_path = os.path.join(subfolder_path, wav_file)
+                    transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
+                    if os.path.exists(transcript_path):
+                        with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
+                            transcript = transcript_file.read()
 
-            for wav_file in wav_files:
-                wav_path = os.path.join(subfolder_path, wav_file)
-                transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
-                if os.path.exists(transcript_path):
-                    with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
-                        transcript = transcript_file.read()
-
-                    all_paths.append(wav_path)
-                    all_transcripts.append(transcript)
+                        all_paths.append(wav_path)
+                        all_transcripts.append(transcript)
 
         df = pd.DataFrame({'path': all_paths, 'transcript': all_transcripts})
-        print(df.head(5))
+        print(len(df))
         return df
 
     def get_data(self) -> Dataset:

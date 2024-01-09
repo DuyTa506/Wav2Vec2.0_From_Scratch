@@ -31,8 +31,10 @@ class Inferencer:
     def transcribe(self, wav) -> str:
         input_values = self.processor(wav, sampling_rate=16000, return_tensors="pt").input_values
         logits = self.model(input_values.to(self.device)).logits
-        pred_ids = torch.argmax(logits, dim=-1)
+        pred_ids = torch.argmax(logits, axis=-1)
+        print(pred_ids)
         pred_transcript = self.processor.batch_decode(pred_ids)[0]
+        print(pred_transcript)
         return pred_transcript
 
     def run(self, test_filepath):
@@ -52,16 +54,19 @@ class Inferencer:
 
         else:
             wav, _ = librosa.load(test_filepath, sr = 16000)
+            transcript = self.transcribe(wav)
             print(f"transcript: {self.transcribe(wav)}")
+            with open("./example.txt", 'w') as f:
+                f.write(f"{transcript}\n")
 
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='ASR INFERENCE ARGS')
-    args.add_argument('-f', '--test_filepath', type=str, required = True,
-                      help='It can be either the path to your audio file (.wav, .mp3) or a text file (.txt) containing a list of audio file paths.')
+    args.add_argument('-f', '--test_filepath', type=str,
+                      help='It can be either the path to your audio file (.wav, .mp3) or a text file (.txt) containing a list of audio file paths.',default = "/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC/G0001_S0003_0_SPK002/124.700_128.650.wav")
     args.add_argument('-s', '--huggingface_folder', type=str, default = 'huggingface-hub',
                       help='The folder where you stored the huggingface files. Check the <local_dir> argument of [huggingface.args] in config.toml. Default value: "huggingface-hub".')
-    args.add_argument('-m', '--model_path', type=str, default = None,
+    args.add_argument('-m', '--model_path', type=str, default = "/home/pvanh/data/duy55/Wav2Vec2.0_From_Scratch/Wav2vec2-Finetune/saved/ASR/checkpoints/best_model.tar",
                       help='Path to the model (.tar file) in saved/<project_name>/checkpoints. If not provided, default uses the pytorch_model.bin in the <HUGGINGFACE_FOLDER>')
     args.add_argument('-d', '--device_id', type=int, default = 0,
                       help='The device you want to test your model on if CUDA is available. Otherwise, CPU is used. Default value: 0')

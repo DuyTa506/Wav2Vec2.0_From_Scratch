@@ -16,10 +16,10 @@ from utils.utils import *
 from utils.metric import Metric
 from dataloader.dataset import DefaultCollate
 from transformers import Wav2Vec2ForCTC, Wav2Vec2FeatureExtractor, Wav2Vec2CTCTokenizer, Wav2Vec2Processor
-
+from torch.utils.data import random_split
 def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = '127.0.0.1'
-    os.environ['MASTER_PORT'] = '4444'
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '23415'
     os.environ['GLOO_SOCKET_IFNAME']= 'enp1s0'
 
     # initialize the process group
@@ -70,9 +70,10 @@ def main(rank, world_size, config, resume, preload):
     config["val_dataset"]["args"]["special_tokens"] = config["special_tokens"]
 
     train_base_ds = initialize_module(config["train_dataset"]["path"], args=config["train_dataset"]["args"])
+
     vocab_dict = train_base_ds.get_vocab_dict()
-    with open('vocab.json', 'w+') as f:
-        json.dump(vocab_dict, f)
+    with open('vocab.json', 'w+',encoding='utf-8' ) as f:
+        json.dump(vocab_dict, f,ensure_ascii=False)
         f.close()
     dist.barrier()
     # Create processor
@@ -82,9 +83,16 @@ def main(rank, world_size, config, resume, preload):
     feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(config['meta']['pretrained_path'])
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     default_collate = DefaultCollate(processor, config['meta']['sr'])
-
+    #data_collator = DataCollatorCTCWithPadding(processor=processor,padding=True)
     # Create train dataloader
+
+
     train_ds = train_base_ds.get_data()
+    train_size = int(config["meta"]["train_ratio"] * len(train_ds))
+    valid_size = len(train_ds) - train_size
+
+    train_ds, val_ds = random_split(train_ds, [train_size, valid_size])
+
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         train_ds,
         num_replicas=world_size,
@@ -99,8 +107,8 @@ def main(rank, world_size, config, resume, preload):
     )
 
     # Create val dataloader
-    val_base_ds = initialize_module(config["val_dataset"]["path"], args=config["val_dataset"]["args"])
-    val_ds = val_base_ds.get_data()
+    # val_base_ds = initialize_module(config["val_dataset"]["path"], args=config["val_dataset"]["args"])
+    # val_ds = val_base_ds.get_data()
     val_sampler = torch.utils.data.distributed.DistributedSampler(
         val_ds,
         num_replicas=world_size,
@@ -114,18 +122,32 @@ def main(rank, world_size, config, resume, preload):
         collate_fn=default_collate
     )
 
-
+    print("Done initialize dataset : Train samples: {}, Test samples: {}".format(train_size,valid_size))
     # Load pretrained model
+    #for Tencent Pretrained
     model = Wav2Vec2ForCTC.from_pretrained(
         config['meta']['pretrained_path'], 
         ctc_loss_reduction="mean", 
         pad_token_id=processor.tokenizer.pad_token_id,
         vocab_size=len(processor.tokenizer),
-        # gradient_checkpointing=False
+        #gradient_checkpointing=False
     )
+    #for XLR-S
+    #model = Wav2Vec2ForCTC.from_pretrained(config['meta']['pretrained_path'])
+    # model = Wav2Vec2ForCTC.from_pretrained(
+    # config['meta']['pretrained_path'], 
+    # attention_dropout=0.0,
+    # hidden_dropout=0.0,
+    # feat_proj_dropout=0.0,
+    # mask_time_prob=0.05,
+    # layerdrop=0.0,
+    # ctc_loss_reduction="mean", 
+    # pad_token_id=processor.tokenizer.pad_token_id,
+    # vocab_size=len(processor.tokenizer),
+    # )
     
     # freeze the wav2vec feature encoder, if you have small dataset, this helps a lot
-    model.freeze_feature_encoder()
+    model.freeze_feature_extractor()
     # DDP for multi-processing
     model = DDP(model.to(rank), device_ids=[rank], find_unused_parameters=True)
 
@@ -136,11 +158,14 @@ def main(rank, world_size, config, resume, preload):
         lr = config["optimizer"]["lr"]
     )
     steps_per_epoch = (len(train_dl)//gradient_accumulation_steps) + (len(train_dl)%gradient_accumulation_steps != 0)
+    # can use Linear Scheduler instead
+    # scheduler = torch.optim.lr_scheduler.LinearLR(
+    #       optimizer)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer, 
-        max_lr=config["scheduler"]["max_lr"], 
-        epochs=epochs, 
-        steps_per_epoch = steps_per_epoch)
+          optimizer, 
+          max_lr=config["scheduler"]["max_lr"], 
+          epochs=epochs, 
+          steps_per_epoch = steps_per_epoch)
 
 
     if rank == 0:

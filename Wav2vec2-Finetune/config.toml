@@ -1,14 +1,15 @@
 [meta]
-name = "ASR" 
-pretrained_path = "TencentGameMate/chinese-wav2vec2-base"
+name = "ASR_Linear_LR" 
+pretrained_path = "TencentGameMate/chinese-wav2vec2-large"
 seed = 42
-epochs = 5
+epochs = 20
 save_dir = "saved/" 
-gradient_accumulation_steps = 2
+gradient_accumulation_steps = 1
 use_amp = false # Whether to use Automatic Mixed Precision for speeding up - https://pytorch.org/docs/stable/amp.html
 device_ids = "0" # set the gpu devices on which you want to train your model
 sr = 16000
 max_clip_grad_norm = 5.0 # torch.nn.utils.clip_grad_norm_
+train_ratio = 0.95
 
 [special_tokens]
 bos_token = "<bos>"
@@ -29,7 +30,7 @@ blocking = false # whether to wait until the model is uploaded (this will be ver
     # you can pass your auth_token from your huggingface account to use_auth_token.
     # Otherwise you need to run ```huggingface-cli login``` command to log in
     [huggingface.args]
-    local_dir = "huggingface-hub" # where your repo places in local
+    local_dir = "huggingface-hub_Linear_Scheduler" # where your repo places in local
     use_auth_token = true # you must provide the auth_token of your huggingface account. 
     clone_from = "" # path to your repo in huggingface
 
@@ -38,14 +39,13 @@ blocking = false # whether to wait until the model is uploaded (this will be ver
 [train_dataset]
 path = "base.base_dataset.BaseDataset"
     [train_dataset.args]
-    path = "/home/pvanh/data/zh_stt/ASR-RAMC-BIGCCSC/cleaned_ASR-RAMC"
+    path = "/home/pvanh/data/zh_stt/ASR-RAMC-BIGCCSC/cleaned_ASR-RAMC,/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC"
     preload_data = false
     delimiter = "|"
     # Only train audio files that have duration in range [min_duration, max_duration]
-    # min_duration = 0.5 # if not pass, default is -np.inf
-    # max_duration = 20 # if not pass, default is np.inf
+    #min_duration = 1 # if not pass, default is -np.inf
+    #max_duration = 20 # if not pass, default is np.inf
     nb_workers = 16
-    
     [train_dataset.dataloader]
     batch_size = 8
     num_workers = 16
@@ -60,7 +60,7 @@ path = "base.base_dataset.BaseDataset"
 [val_dataset]
 path = "base.base_dataset.BaseDataset"
     [val_dataset.args]
-    path = "/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC/G0001_S0001_0_SPK002"
+    path = "/home/pvanh/data/zh_stt/ASR-RAMC-BIGCCSC/cleaned_ASR-RAMC/CTS-CN-F2F-2019-11-15-1449"
     preload_data = false
     delimiter = "|"
     nb_workers = 16
@@ -75,15 +75,15 @@ path = "base.base_dataset.BaseDataset"
 
  
 [optimizer]
-lr = 1e-6
+lr = 1e-5
 
 
-[scheduler] 
-max_lr = 5e-4
+[scheduler]
+max_lr = 3e-4
     
 
 [trainer]
 path = "trainer.trainer.Trainer"
     [trainer.args]
-    validation_interval = 500
+    validation_interval = 1000
     save_max_metric_score = false 
