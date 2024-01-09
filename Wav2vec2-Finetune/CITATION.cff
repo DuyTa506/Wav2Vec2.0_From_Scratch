@@ -9,17 +9,14 @@ message: >-
   metadata from this file.
 type: software
 authors:
-  - given-names: Le
+  - given-names: Ta
     family-names: Khanh
     name-particle: Duy
-    email: khanhld218@uef.edu.vn
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.6540979
-repository-code: 'https://github.com/khanld/ASR-Wa2vec-Finetune'
+    email: duyfaker01@gmail.com
+
+repository-code: 'https://github.com/DuyTa506/Wav2Vec2.0_From_Scratch'
 url: >-
-  https://github.com/khanld/ASR-Wa2vec-Finetune
+ https://github.com/DuyTa506/Wav2Vec2.0_From_Scratch
 keywords:
   - asr
-date-released: 2022-05-12
-doi: 10.5281/zenodo.6540979
+date-released: 2024-09-01
