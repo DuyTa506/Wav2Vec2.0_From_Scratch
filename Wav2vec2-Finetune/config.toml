@@ -39,7 +39,7 @@ blocking = false # whether to wait until the model is uploaded (this will be ver
 [train_dataset]
 path = "base.base_dataset.BaseDataset"
     [train_dataset.args]
-    path = "/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC"
+    path = "/app/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC"
     preload_data = false
     delimiter = "|"
     # Only train audio files that have duration in range [min_duration, max_duration]
