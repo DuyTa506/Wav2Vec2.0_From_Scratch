@@ -1,8 +1,8 @@
 [meta]
-name = "ASR_Linear_LR" 
+name = "wav2vec2_large" 
 pretrained_path = "TencentGameMate/chinese-wav2vec2-large"
 seed = 42
-epochs = 20
+epochs = 10
 save_dir = "saved/" 
 gradient_accumulation_steps = 1
 use_amp = false # Whether to use Automatic Mixed Precision for speeding up - https://pytorch.org/docs/stable/amp.html
@@ -39,7 +39,7 @@ blocking = false # whether to wait until the model is uploaded (this will be ver
 [train_dataset]
 path = "base.base_dataset.BaseDataset"
     [train_dataset.args]
-    path = "/home/pvanh/data/zh_stt/ASR-RAMC-BIGCCSC/cleaned_ASR-RAMC,/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC"
+    path = "/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC"
     preload_data = false
     delimiter = "|"
     # Only train audio files that have duration in range [min_duration, max_duration]
@@ -79,7 +79,7 @@ lr = 1e-5
 
 
 [scheduler]
-max_lr = 5e-5
+max_lr = 3e-5
     
 
 [trainer]
