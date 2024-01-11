@@ -13,3 +13,5 @@ librosa
 transformers==4.18.0
 soundfile
 numpy
+protobuf=3.20.0
+evaluate
