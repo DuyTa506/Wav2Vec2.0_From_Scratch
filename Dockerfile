@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.6.0-base-ubuntu20.04
+FROM nvidia/cuda:12.3.1-base-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -20,7 +20,7 @@ RUN python3 -m pip install -r requirements.txt
 RUN python3 -m pip install --upgrade pip
 
 # Install PyTorch and torchvision
-RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+RUN pip3 install torch torchvision torchaudio
 
 # Set the working directory
 WORKDIR /app
