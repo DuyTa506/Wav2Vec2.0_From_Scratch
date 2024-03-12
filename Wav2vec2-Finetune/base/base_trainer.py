@@ -4,7 +4,7 @@ import os
 import numpy as np
 from typing import Dict, List
 import shutil
-
+import glob
 from logger.tensorboard import TensorboardWriter
 from huggingface_hub import Repository
 
@@ -140,6 +140,7 @@ class BaseTrainer:
         self.best_score = checkpoint["best_score"]
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.scheduler.load_state_dict(checkpoint["scheduler"])
+        print("Start schedule at : " ,self.scheduler)
         self.scaler.load_state_dict(checkpoint["scaler"])
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             self.model.module.load_state_dict(checkpoint["model"], strict = True)
@@ -196,6 +197,7 @@ class BaseTrainer:
         # the model checkpoint will be saved as "best_model.tar."
         # The newer best-scored checkpoint will overwrite the older one.
         if is_best_epoch:
+            print("Saving better model !!")
             torch.save(state_dict, os.path.join(self.save_dir, "best_model.tar"))
             if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
                 self.model.module.save_pretrained(self.config["huggingface"]["args"]["local_dir"])
@@ -204,6 +206,18 @@ class BaseTrainer:
             
             if self.config["huggingface"]["push_to_hub"] and self.config["huggingface"]["push_every_validation_step"]:
                 self._push_to_hub("update_best_model", True)
+                
+        saved_checkpoints = glob.glob(os.path.join(self.save_dir, "model_*.tar"))
+        num_saved_checkpoints = len(saved_checkpoints)
+
+        # Limit the number of saved checkpoints to 10
+        if num_saved_checkpoints > 10:
+            # Sort the checkpoints by creation time (oldest first) and keep the latest 10
+            sorted_checkpoints = sorted(saved_checkpoints, key=os.path.getctime)
+            checkpoints_to_remove = sorted_checkpoints[:-10]
+            
+            for checkpoint_to_remove in checkpoints_to_remove:
+                os.remove(checkpoint_to_remove)
 
 
     def _is_best_epoch(self, score, save_max_metric_score=True) -> bool:

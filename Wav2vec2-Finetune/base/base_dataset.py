@@ -19,10 +19,12 @@ from dataloader.dataset import Dataset as InstanceDataset
 
 
 class BaseDataset(Dataset):
-    def __init__(self, rank, dist, path, sr, delimiter, special_tokens, min_duration = -np.inf, max_duration = np.inf, preload_data = False, transform = None, nb_workers = 4):
+    def __init__(self, rank, dist, path, sr, delimiter, special_tokens, min_duration = -np.inf, max_duration = np.inf, preload_data = False, transform = None, nb_workers = 4, volume = None, model_type= "pinyin"):
         self.rank = rank
         self.dist = dist
         self.sr = sr
+        self.volume = volume
+        self.model_type = model_type
         # Special characters to remove in your data 
         self.chars_to_ignore = u"[！？。，＂＃＄％＆＇（）－／：；＜＝＞＠＼＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏"  + string.punctuation+']+'
         self.label  = ["[+]", "[++]", "[*]", "[SONANT]", "[MUSIC]", "[LAUGHTER]", "[ENS]", "[SYSTEM]"]
@@ -32,8 +34,8 @@ class BaseDataset(Dataset):
         self.max_duration = max_duration
         self.df = self.load_data(path, delimiter)
         self.special_tokens = special_tokens
-        pandarallel.initialize(progress_bar=True, nb_workers = nb_workers)
 
+        pandarallel.initialize(progress_bar=True, nb_workers = nb_workers)
         if min_duration != -np.inf or max_duration != np.inf:
             if self.rank == 0 and 'duration' not in self.df.columns:
                 print("\n*****Generate duration column*****")
@@ -55,12 +57,15 @@ class BaseDataset(Dataset):
             self.df['wav'] = self.df['path'].parallel_apply(lambda filepath: load_wav(filepath, sr = self.sr))
         
     def remove_special_characters(self, transcript) -> str:
-        transcript = ''.join(transcript.split())
         rule = re.compile(self.chars_to_ignore)
         label_pattern = '|'.join(map(re.escape, self.label))
         rule_label = re.compile(f'(\[{label_pattern}\])')
-        transcript = re.sub(rule_label, "", transcript)
-        transcript = re.sub(rule, "", transcript).lower()
+
+        transcript = re.sub(rule_label, "", transcript)    
+
+        transcript = re.sub(rule, " ", transcript).lower()
+        
+        transcript = ' '.join(transcript.split())
         return transcript
 
     def get_vocab_dict(self) -> Dict[int, str]:
@@ -99,8 +104,14 @@ class BaseDataset(Dataset):
                 wav_files = [f for f in all_files if f.endswith(".wav")]
 
                 for wav_file in wav_files:
+                    
                     wav_path = os.path.join(input_folder, wav_file)
-                    transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
+                    if self.model_type == "pinyin" :
+                        print("training on pinyin")
+                        transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + "_pipyin.txt")
+                    else :
+                        print("training on hanzi")
+                        transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
                     if os.path.exists(transcript_path):
                         with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
                             transcript = transcript_file.read()
@@ -119,16 +130,19 @@ class BaseDataset(Dataset):
 
                 for wav_file in wav_files:
                     wav_path = os.path.join(subfolder_path, wav_file)
-                    transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
+                    if self.model_type == "pinyin" :
+                        transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + "_pipyin.txt")
+                    else : 
+                        transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
                     if os.path.exists(transcript_path):
                         with open(transcript_path, 'r', encoding='utf-8') as transcript_file:
                             transcript = transcript_file.read()
 
                         all_paths.append(wav_path)
                         all_transcripts.append(transcript)
-
+        
         df = pd.DataFrame({'path': all_paths, 'transcript': all_transcripts})
-        print(len(df))
+        df = df.sample(frac=self.volume, random_state=42)
         return df
 
     def get_data(self) -> Dataset:

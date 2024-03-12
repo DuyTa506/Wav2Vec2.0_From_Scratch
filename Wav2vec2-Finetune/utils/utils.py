@@ -27,7 +27,3 @@ def initialize_module(path: str, args: dict = None, initialize: bool = True):
             return class_or_function()
     else:
         return class_or_function
-
-
-
-

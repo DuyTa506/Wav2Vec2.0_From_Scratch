@@ -19,7 +19,7 @@ from transformers import Wav2Vec2ForCTC, Wav2Vec2FeatureExtractor, Wav2Vec2CTCTo
 from torch.utils.data import random_split
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '23415'
+    os.environ['MASTER_PORT'] = '55555'
     os.environ['GLOO_SOCKET_IFNAME']= 'enp1s0'
 
     # initialize the process group
@@ -88,6 +88,7 @@ def main(rank, world_size, config, resume, preload):
 
 
     train_ds = train_base_ds.get_data()
+    
     train_size = int(config["meta"]["train_ratio"] * len(train_ds))
     valid_size = len(train_ds) - train_size
 
@@ -125,27 +126,27 @@ def main(rank, world_size, config, resume, preload):
     print("Done initialize dataset : Train samples: {}, Test samples: {}".format(train_size,valid_size))
     # Load pretrained model
     #for Tencent Pretrained
-    model = Wav2Vec2ForCTC.from_pretrained(
-        config['meta']['pretrained_path'], 
-        ctc_loss_reduction="mean", 
-        pad_token_id=processor.tokenizer.pad_token_id,
-        vocab_size=len(processor.tokenizer),
-        #gradient_checkpointing=False
-    )
+    # model = Wav2Vec2ForCTC.from_pretrained(
+    #     config['meta']['pretrained_path'], 
+    #     ctc_loss_reduction="mean", 
+    #     pad_token_id=processor.tokenizer.pad_token_id,
+    #     vocab_size=len(processor.tokenizer),
+    #     #gradient_checkpointing=False
+    # )
     #for XLR-S
     #model = Wav2Vec2ForCTC.from_pretrained(config['meta']['pretrained_path'])
-    # model = Wav2Vec2ForCTC.from_pretrained(
-    # config['meta']['pretrained_path'], 
-    # attention_dropout=0.0,
-    # hidden_dropout=0.0,
-    # feat_proj_dropout=0.0,
-    # mask_time_prob=0.05,
-    # layerdrop=0.0,
-    # ctc_loss_reduction="mean", 
-    # pad_token_id=processor.tokenizer.pad_token_id,
-    # vocab_size=len(processor.tokenizer),
-    # )
-    
+    model = Wav2Vec2ForCTC.from_pretrained(
+     config['meta']['pretrained_path'], 
+     attention_dropout=0.0,
+     hidden_dropout=0.0,
+     feat_proj_dropout=0.0,
+     mask_time_prob=0.05,
+     layerdrop=0.0,
+     ctc_loss_reduction="mean", 
+     pad_token_id=processor.tokenizer.pad_token_id,
+     vocab_size=len(processor.tokenizer),
+    )
+    model.config.ctc_zero_infinity = True
     # freeze the wav2vec feature encoder, if you have small dataset, this helps a lot
     model.freeze_feature_extractor()
     # DDP for multi-processing
@@ -160,13 +161,15 @@ def main(rank, world_size, config, resume, preload):
     )
     steps_per_epoch = (len(train_dl)//gradient_accumulation_steps) + (len(train_dl)%gradient_accumulation_steps != 0)
     # can use Linear Scheduler instead
-    # scheduler = torch.optim.lr_scheduler.LinearLR(
-    #       optimizer)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-          optimizer, 
-          max_lr=config["scheduler"]["max_lr"], 
-          epochs=epochs, 
-          steps_per_epoch = steps_per_epoch)
+    if config["scheduler"]["type"] == "linear": 
+        scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=1.0,end_factor=0.25,total_iters=5)
+    elif config["scheduler"]["type"] == "onecycle":
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer, 
+            max_lr=config["scheduler"]["max_lr"], 
+            epochs=epochs, 
+            steps_per_epoch = steps_per_epoch)
 
 
     if rank == 0:

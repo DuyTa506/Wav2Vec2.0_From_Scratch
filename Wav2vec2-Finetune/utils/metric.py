@@ -13,5 +13,3 @@ class Metric:
         label_strs = self.processor.batch_decode(labels, group_tokens=False)
         wer = self.wer_metric.compute(predictions=pred_strs, references=label_strs)
         return wer
-
-        
