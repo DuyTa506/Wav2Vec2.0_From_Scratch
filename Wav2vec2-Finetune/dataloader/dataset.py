@@ -84,16 +84,19 @@ class DataCollatorCTCWithPadding:
         return batch
 
 class Dataset:
-    def __init__(self, data, sr, preload_data, transform = None):
+    def __init__(self, data, sr, preload_data, transform = None, volume = None):
         self.data = data
         self.sr = sr
         self.transform = transform
         self.preload_data = preload_data
-        
+        #self.volume = volume
     def __len__(self) -> int:
         return len(self.data)
         
     def __getitem__(self, idx) -> tuple:
+        # if self.volume != None : 
+        #     self.data = self.data.sample(frac=0.5, random_state=42)
+        
         item = self.data.iloc[idx]
         if not self.preload_data:
             feature = load_wav(item['path'], sr = self.sr)
