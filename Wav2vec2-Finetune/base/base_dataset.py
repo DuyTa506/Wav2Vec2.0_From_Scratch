@@ -108,7 +108,7 @@ class BaseDataset(Dataset):
                     wav_path = os.path.join(input_folder, wav_file)
                     if self.model_type == "pinyin" :
                         print("training on pinyin")
-                        transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + "_pipyin.txt")
+                        transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + "_dacidian_pipyin.txt")
                     else :
                         print("training on hanzi")
                         transcript_path = os.path.join(input_folder, os.path.splitext(wav_file)[0] + ".txt")
@@ -131,7 +131,7 @@ class BaseDataset(Dataset):
                 for wav_file in wav_files:
                     wav_path = os.path.join(subfolder_path, wav_file)
                     if self.model_type == "pinyin" :
-                        transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + "_pipyin.txt")
+                        transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + "dacidian_pipyin.txt")
                     else : 
                         transcript_path = os.path.join(subfolder_path, os.path.splitext(wav_file)[0] + ".txt")
                     if os.path.exists(transcript_path):
