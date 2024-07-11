@@ -26,7 +26,7 @@ class BaseDataset(Dataset):
         self.volume = volume
         self.model_type = model_type
         # Special characters to remove in your data 
-        self.chars_to_ignore = u"[！？。，＂＃＄％＆＇（）－／：；＜＝＞＠＼＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏"  + string.punctuation+']+'
+        self.chars_to_ignore = u"[！？。，＂＃％＆＇（）－／：；＜＝＞＠＼＾｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏"  + string.punctuation+']+'
         self.label  = ["[+]", "[++]", "[*]", "[SONANT]", "[MUSIC]", "[LAUGHTER]", "[ENS]", "[SYSTEM]"]
         self.transform = transform
         self.preload_data = preload_data
