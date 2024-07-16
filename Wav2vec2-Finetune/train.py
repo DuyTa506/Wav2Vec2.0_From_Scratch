@@ -125,27 +125,30 @@ def main(rank, world_size, config, resume, preload):
 
     print("Done initialize dataset : Train samples: {}, Test samples: {}".format(train_size,valid_size))
     # Load pretrained model
+    if "TencentGameMate" in config['meta']['pretrained_path'] :
     #for Tencent Pretrained
-    # model = Wav2Vec2ForCTC.from_pretrained(
-    #     config['meta']['pretrained_path'], 
-    #     ctc_loss_reduction="mean", 
-    #     pad_token_id=processor.tokenizer.pad_token_id,
-    #     vocab_size=len(processor.tokenizer),
-    #     #gradient_checkpointing=False
-    # )
+        model = Wav2Vec2ForCTC.from_pretrained(
+        config['meta']['pretrained_path'], 
+        ctc_loss_reduction="mean", 
+         pad_token_id=processor.tokenizer.pad_token_id,
+        vocab_size=len(processor.tokenizer),
+       #gradient_checkpointing=False
+        )
     #for XLR-S
+    else :
+
     #model = Wav2Vec2ForCTC.from_pretrained(config['meta']['pretrained_path'])
-    model = Wav2Vec2ForCTC.from_pretrained(
-     config['meta']['pretrained_path'], 
-     attention_dropout=0.0,
-     hidden_dropout=0.0,
-     feat_proj_dropout=0.0,
-     mask_time_prob=0.05,
-     layerdrop=0.0,
-     ctc_loss_reduction="mean", 
-     pad_token_id=processor.tokenizer.pad_token_id,
-     vocab_size=len(processor.tokenizer),
-    )
+        model = Wav2Vec2ForCTC.from_pretrained(
+        config['meta']['pretrained_path'], 
+        attention_dropout=0.0,
+        hidden_dropout=0.0,
+        feat_proj_dropout=0.0,
+        mask_time_prob=0.05,
+        layerdrop=0.0,
+        ctc_loss_reduction="mean", 
+        pad_token_id=processor.tokenizer.pad_token_id,
+        vocab_size=len(processor.tokenizer),
+        )
     model.config.ctc_zero_infinity = True
     # freeze the wav2vec feature encoder, if you have small dataset, this helps a lot
     model.freeze_feature_extractor()

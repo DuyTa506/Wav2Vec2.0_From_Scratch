@@ -10,3 +10,6 @@ models/
 *.out
 **/__pycache__/
 */__pycache__/
+huggingface-hub_xlsr_pinyn/
+dask_data/
+data_path/

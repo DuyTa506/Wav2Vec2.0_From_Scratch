@@ -197,7 +197,7 @@ class BaseTrainer:
         # the model checkpoint will be saved as "best_model.tar."
         # The newer best-scored checkpoint will overwrite the older one.
         if is_best_epoch:
-            print("Saving better model !!")
+            print(f"\nSaving better model !!")
             torch.save(state_dict, os.path.join(self.save_dir, "best_model.tar"))
             if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
                 self.model.module.save_pretrained(self.config["huggingface"]["args"]["local_dir"])
@@ -210,11 +210,11 @@ class BaseTrainer:
         saved_checkpoints = glob.glob(os.path.join(self.save_dir, "model_*.tar"))
         num_saved_checkpoints = len(saved_checkpoints)
 
-        # Limit the number of saved checkpoints to 10
-        if num_saved_checkpoints > 10:
-            # Sort the checkpoints by creation time (oldest first) and keep the latest 10
+        # Limit the number of saved checkpoints to 5
+        if num_saved_checkpoints > 5:
+            # Sort the checkpoints by creation time (oldest first) and keep the latest 5
             sorted_checkpoints = sorted(saved_checkpoints, key=os.path.getctime)
-            checkpoints_to_remove = sorted_checkpoints[:-10]
+            checkpoints_to_remove = sorted_checkpoints[:-5]
             
             for checkpoint_to_remove in checkpoints_to_remove:
                 os.remove(checkpoint_to_remove)

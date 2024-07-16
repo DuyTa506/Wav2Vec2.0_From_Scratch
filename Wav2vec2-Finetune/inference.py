@@ -53,7 +53,7 @@ class Inferencer:
         else:
             wav, _ = librosa.load(test_filepath, sr = 16000)
             transcript = self.transcribe(wav)
-            print(f"transcript: {self.transcribe(wav)}")
+            print(f"transcript: {transcript}")
             with open("./example.txt", 'w') as f:
                 f.write(f"{transcript}\n")
 
@@ -61,8 +61,8 @@ class Inferencer:
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='ASR INFERENCE ARGS')
     args.add_argument('-f', '--test_filepath', type=str,
-                      help='It can be either the path to your audio file (.wav, .mp3) or a text file (.txt) containing a list of audio file paths.',default = "/home/pvanh/data/zh_stt/ASR-CSTRMACSTCSC/cleaned_ASR-CSTRMACSTCSC/G0001_S0003_0_SPK002/124.700_128.650.wav")
-    args.add_argument('-s', '--huggingface_folder', type=str, default = 'huggingface-hub',
+                      help='It can be either the path to your audio file (.wav, .mp3) or a text file (.txt) containing a list of audio file paths.',default = "/app/zh_stt/ASR-RAMC-BIGCCSC/cleaned_ASR-RAMC/CTS-CN-F2F-2019-11-15-1346/0.224_3.968.wav")
+    args.add_argument('-s', '--huggingface_folder', type=str, default = './huggingface-hub_xlsr_pinyn',
                       help='The folder where you stored the huggingface files. Check the <local_dir> argument of [huggingface.args] in config.toml. Default value: "huggingface-hub".')
     args.add_argument('-m', '--model_path', type=str, default = None,
                       help='Path to the model (.tar file) in saved/<project_name>/checkpoints. If not provided, default uses the pytorch_model.bin in the <HUGGINGFACE_FOLDER>')
@@ -78,4 +78,6 @@ if __name__ == '__main__':
         model_path = args.model_path)
 
     inferencer.run(args.test_filepath)
+
+
 

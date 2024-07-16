@@ -52,7 +52,7 @@ class DataCollatorCTCWithPadding:
     """
 
     processor: AutoProcessor
-    padding: Union[bool, str] = "longest"
+    padding: Union[bool, str] = True
     pad_to_multiple_of: Optional[int] = None
     pad_to_multiple_of_labels: Optional[int] = None
 

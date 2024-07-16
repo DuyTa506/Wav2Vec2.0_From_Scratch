@@ -59,7 +59,7 @@ class Trainer(BaseTrainer):
         self.sr = config["meta"]["sr"]
         self.n_gpus = n_gpus
         self.max_clip_grad_norm = max_clip_grad_norm
-        self.stateful_metrics = ["train_loss", "train_lr", "train_grad_norm", "train_wer", "val_loss", "val_wer"]
+        self.stateful_metrics = ["train_loss", "train_lr", "train_grad_norm", "train_wer" ,"train_cer" , "val_loss", "val_wer", "val_cer"]
 
     def get_grad_norm(self, params, scale=1) -> torch.tensor:
         """Compute grad norm given a gradient scale."""
@@ -107,7 +107,10 @@ class Trainer(BaseTrainer):
                 # are accumulated for multiple backward passes in PyTorch
                 loss = outputs.loss / self.gradient_accumulation_steps
             self.scaler.scale(loss).backward()
-            wer = torch.tensor(self.compute_metric(outputs.logits.detach(), batch['labels']))
+            metrics = self.compute_metric(outputs.logits.detach(), batch['labels'])
+            wer = torch.tensor(metrics['wer'])
+            cer = torch.tensor(metrics['cer'])
+
 
             # Optimize step
             if (dl_step + 1) % self.gradient_accumulation_steps == 0 or dl_step == len(self.train_dl) - 1:
@@ -135,12 +138,14 @@ class Trainer(BaseTrainer):
                 if self.n_gpus > 1:
                     loss = self.gather(loss).mean()
                     wer = self.gather(wer).mean()
+                    cer = self.gather(cer).mean()
 
                 train_logs = {
                     "loss": loss * self.gradient_accumulation_steps,
                     "lr": self.optimizer.param_groups[0]['lr'],
                     "grad_norm": grad_norm,
-                    "wer": wer
+                    "wer": wer,
+                    "cer" : cer
                 }
                 train_logs = {k: v.item() if hasattr(v, 'item') else v for k, v in train_logs.items()}
 
@@ -162,7 +167,7 @@ class Trainer(BaseTrainer):
                         pbar.update(self.pbar_step+1, "val_", val_logs)
 
                         # Save best
-                        if self._is_best_epoch(val_logs['wer'], save_max_metric_score=self.save_max_metric_score):
+                        if self._is_best_epoch(val_logs['loss'], save_max_metric_score=self.save_max_metric_score):
                             self._save_checkpoint(epoch, dl_step, is_best_epoch=True)
                         else:
                             self._save_checkpoint(epoch, dl_step, is_best_epoch=False)
@@ -178,7 +183,8 @@ class Trainer(BaseTrainer):
         # init logs
         val_logs = {
             "loss": 0,
-            "wer": 0
+            "wer": 0,
+            "cer" : 0,
         }
 
         for batch in tqdm(self.val_dl, total = len(self.val_dl), disable = not self.rank == 0):
@@ -187,7 +193,9 @@ class Trainer(BaseTrainer):
                     outputs = self.model(**batch)
 
             val_logs["loss"] += outputs.loss / len(self.val_dl)
-            val_logs["wer"] += torch.tensor(self.compute_metric(outputs.logits, batch['labels'])) / len(self.val_dl)
+            val_metrics = self.compute_metric(outputs.logits, batch['labels'])
+            val_logs["wer"] += torch.tensor(val_metrics['wer']) / len(self.val_dl)
+            val_logs["cer"] += torch.tensor(val_metrics['cer']) / len(self.val_dl)
 
         # average over devices in ddp
         if self.n_gpus > 1:
