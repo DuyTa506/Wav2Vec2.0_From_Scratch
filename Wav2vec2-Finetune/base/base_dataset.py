@@ -28,7 +28,9 @@ class BaseDataset(Dataset):
         self.model_type = model_type
         self.init_pq = init_pq
         # Special characters to remove in your data 
+
         self.chars_to_ignore = u"[！？。，＂＃％＆＇（）－／：；＜＝＞＠＼＾｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏"  + string.punctuation.replace("_", "").replace("$", "") + ']+'  # Remove $ from chars_to_ignore
+
         self.label  = ["[+]", "[++]", "[*]", "[SONANT]", "[MUSIC]", "[LAUGHTER]", "[ENS]", "[SYSTEM]"]
         self.transform = transform
         self.preload_data = preload_data
@@ -98,6 +100,7 @@ class BaseDataset(Dataset):
             wavs += [wav]
         return wavs
 
+
     def load_data(self, input_folders, delimiter, batch_size=100000) -> dd.DataFrame:
             print("Training with {}".format(self.model_type))
             
@@ -157,6 +160,7 @@ class BaseDataset(Dataset):
                 print(f"\nGenerated data file !")
 
             return pd_last
+
         
     def load_pq_file(self, csv_path) :
         df = pd.read_parquet(csv_path)
