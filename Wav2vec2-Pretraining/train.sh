@@ -1,21 +1,27 @@
-CUDA_VISIBLE_DEVICES="0" accelerate launch \
+CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" accelerate launch \
 	--multi_gpu \
 	--num_machines="1" \
 	--num_processes="1" \
 	--mixed_precision="fp16" \
 	--num_cpu_threads_per_process="12" \
-	run_wav2vec2_pretraining_no_trainer.py \
+	run.py \
 		--train_datasets \ 
-			data/train_clean_100.tsv \
-			data/train_clean_360.tsv \
-			data/train_other_500.tsv \
+			data/train_clean_1_1000.tsv \
+			data/train_clean_2_1000.tsv \
+			data/train_clean_3_1000.tsv \ 
+   			data/train_clean_4_1000.tsv \ 
+      			data/train_clean_5_1000.tsv \ 
+	 		data/train_clean_6_1000.tsv \ 
+    			data/train_clean_7_1000.tsv \ 
+       			data/train_clean_8_1000.tsv \ 
+	  		data/train_clean_9_1000.tsv \ 
+     			data/train_clean_10_1000.tsv \ 
 		--val_datasets \
 			data/dev_clean.tsv \
-			data/dev_other.tsv \
 		--audio_column_name="path" \
 		--duration_column_name="duration" \
 		--separator="\t" \
-		--model_name_or_path="facebook/wav2vec2-base" \
+		--model_name_or_path="nguyenvulebinh/wav2vec2-base-vi" \
 		--load_from_pretrained \
 		--output_dir="wav2vec2_pretraining" \
 		--max_train_steps="300000" \
